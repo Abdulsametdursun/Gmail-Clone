@@ -1,0 +1,49 @@
+.app {
+  height: 100vh;
+}
+
+.app__body {
+  display: flex;
+  height: 100vh;
+}
+
+.app.light-theme {
+  background-color: white;
+  color: black;
+}
+
+.app.dark-theme {
+  background-color: #121212;
+  color: white;
+}
+
+.app.dark-theme .sidebar,
+.app.dark-theme .header,
+.app.dark-theme .emailList,
+.app.dark-theme .emailRow,
+.app.dark-theme .emailList__sections {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.app.light-theme .sidebar,
+.app.light-theme .header,
+.app.light-theme .emailList,
+.app.light-theme .emailRow,
+.app.light-theme .emailList__sections {
+  background-color: white;
+  color: black;
+}
+
+.app.dark-theme .MuiSvgIcon-root {
+  color: white;
+}
+
+.app.dark-theme .sidebar .MuiSvgIcon-root,
+.app.dark-theme .emailList .MuiSvgIcon-root {
+  color: white;
+}
+
+.app.dark-theme .MuiButton-root {
+  color: white;
+}
