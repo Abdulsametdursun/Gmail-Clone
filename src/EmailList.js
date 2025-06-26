@@ -17,7 +17,7 @@ import { db } from './firebase';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 
-function EmailList({ toggleTheme }) {
+function EmailList({ toggleTheme, folder = 'inbox' }) {
   const [emails, setEmails] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -34,16 +34,14 @@ function EmailList({ toggleTheme }) {
     const unsubscribe = db
       .collection('emails')
       .orderBy('timestamp', 'desc')
-      .onSnapshot((snapshot) =>
-        setEmails(
-          snapshot.docs.map((doc) => ({
-            id: doc.id,
-            data: doc.data(),
-          })),
-        ),
-      );
-    return () => unsubscribe(); // clean up listener
-  }, []);
+      .onSnapshot((snapshot) => {
+        const filtered = snapshot.docs
+          .map((doc) => ({ id: doc.id, data: doc.data() }))
+          .filter((email) => email.data.folder === folder);
+        setEmails(filtered);
+      });
+    return () => unsubscribe();
+  }, [folder]);
 
   return (
     <div className='emailList'>
@@ -90,7 +88,7 @@ function EmailList({ toggleTheme }) {
       </div>
 
       <div className='emailList__list'>
-        {emails.map(({ id, data: { to, subject, message, timestamp } }) => (
+        {emails.map(({ id, data: { to, subject, message, timestamp, folder: mailFolder } }) => (
           <EmailRow
             key={id}
             id={id}
@@ -98,6 +96,7 @@ function EmailList({ toggleTheme }) {
             subject={subject}
             description={message}
             time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
+            folder={mailFolder}
           />
         ))}
       </div>

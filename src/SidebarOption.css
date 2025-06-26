@@ -43,3 +43,8 @@
 .sidebarOption:hover > p {
   display: inline !important;
 }
+
+/* Nested options under More */
+.sidebarOption--nested {
+  margin-left: 20px;
+}

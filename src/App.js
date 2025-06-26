@@ -49,8 +49,17 @@ function App() {
               <Route path='/mail'>
                 <Mail />
               </Route>
-              <Route path='/'>
-                <EmailList toggleTheme={toggleTheme} />
+              <Route path='/spam'>
+                <EmailList toggleTheme={toggleTheme} folder='spam' />
+              </Route>
+              <Route path='/trash'>
+                <EmailList toggleTheme={toggleTheme} folder='trash' />
+              </Route>
+              <Route path='/important'>
+                <EmailList toggleTheme={toggleTheme} folder='important' />
+              </Route>
+              <Route exact path='/'>
+                <EmailList toggleTheme={toggleTheme} folder='inbox' />
               </Route>
             </Switch>
           </div>
