@@ -21,9 +21,8 @@ function App() {
   const toggleTheme = () => setDarkTheme((prev) => !prev);
 
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        // the user is logged in
         dispatch(
           login({
             displayName: user.displayName,
@@ -33,7 +32,9 @@ function App() {
         );
       }
     });
-  }, []);
+
+    return () => unsubscribe();
+  }, [dispatch]);
 
   return (
     <Router>

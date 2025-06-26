@@ -9,6 +9,15 @@
   border-width: 0 !important;
 }
 
+.section > .MuiSvgIcon-root {
+  color: grey;
+}
+
+.section--selected > .MuiSvgIcon-root,
+.section:hover > .MuiSvgIcon-root {
+  color: black !important;
+}
+
 .section--selected {
   background-color: whitesmoke;
   border-width: 3px !important;

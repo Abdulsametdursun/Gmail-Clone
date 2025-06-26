@@ -84,9 +84,9 @@ function EmailList({ toggleTheme }) {
       <div className='emailList__sections'>
         <Section Icon={InboxIcon} title='Primary' color='red' selected />
         <Section Icon={LocalOfferIcon} title='Promotions' color='green' />
-        <Section Icon={PeopleIcon} title='Social' color='#1A73E8' />
-        <Section Icon={Info} title='Updates' color='green' />
-        <Section Icon={ForumIcon} title='Forms' color='green' />
+        <Section Icon={PeopleIcon} title='Social' color='blue' />
+        <Section Icon={Info} title='Updates' color='purple' />
+        <Section Icon={ForumIcon} title='Forms' color='orange' />
       </div>
 
       <div className='emailList__list'>

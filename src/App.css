@@ -44,6 +44,6 @@
   color: white;
 }
 
-.app.dark-theme .MuiButton-root {
+.app.dark-theme :not(.sidebarOption) .MuiSvgIcon-root {
   color: white;
 }

@@ -1,6 +1,7 @@
 .mail {
   flex: 1;
   background-color: whitesmoke;
+  color: black;
 }
 
 .mail__tools {
@@ -21,6 +22,7 @@
   padding: 20px;
   height: 100vh;
   box-shadow: 0px 5px 7px 0px rgba(0, 0, 0, 0.24);
+  color: black;
 }
 
 .mail__bodyHeader {
@@ -56,4 +58,27 @@
   padding: 10px;
   margin-right: 20px;
   overflow-wrap: break-word;
+}
+
+/* 🌙 Dark Theme Styles */
+.app.dark-theme .mail {
+  background-color: #121212;
+  color: #eaeaea;
+}
+
+.app.dark-theme .mail__tools {
+  background-color: #1e1e1e;
+}
+
+.app.dark-theme .mail__body {
+  background-color: #1e1e1e;
+  color: #eaeaea;
+}
+
+.app.dark-theme .mail__bodyHeader {
+  border-bottom: 1px solid #333;
+}
+
+.app.dark-theme .mail__time {
+  color: #bbb;
 }

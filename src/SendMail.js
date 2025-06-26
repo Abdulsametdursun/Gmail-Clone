@@ -2,26 +2,22 @@ import React from 'react';
 import './SendMail.css';
 import CloseIcon from '@material-ui/icons/Close';
 import { Button } from '@material-ui/core';
-import { useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux';
 import { closeSendMessage } from './features/mailSlice';
 import { db } from './firebase';
 import firebase from 'firebase';
 
 function SendMail() {
+  const { register, handleSubmit, errors } = useForm();
   const dispatch = useDispatch();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
-
-  const onSubmit = (data) => {
+  const onSubmit = (formData) => {
+    console.log(formData);
     db.collection('emails').add({
-      to: data.to,
-      subject: data.subject,
-      message: data.message,
+      to: formData.to,
+      subject: formData.subject,
+      message: formData.message,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -35,23 +31,26 @@ function SendMail() {
         <CloseIcon onClick={() => dispatch(closeSendMessage())} className='sendMail__close' />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} autoComplete='off'>
-        <input type='email' placeholder='To' {...register('to', { required: 'To is Required!' })} />
-        {errors.to && <p className='sendMail__error'>{errors.to.message}</p>}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <input name='to' placeholder='To' type='email' ref={register({ required: true })} />
+        {errors.to && <p className='sendMail__error'>To is Required!</p>}
 
         <input
-          type='text'
+          name='subject'
           placeholder='Subject'
-          {...register('subject', { required: 'Subject is Required!' })}
+          type='text'
+          ref={register({ required: true })}
         />
-        {errors.subject && <p className='sendMail__error'>{errors.subject.message}</p>}
+        {errors.subject && <p className='sendMail__error'>Subject is Required!</p>}
 
-        <textarea
+        <input
+          name='message'
           placeholder='Message...'
+          type='text'
           className='sendMail__message'
-          {...register('message', { required: 'Message is Required!' })}
+          ref={register({ required: true })}
         />
-        {errors.message && <p className='sendMail__error'>{errors.message.message}</p>}
+        {errors.message && <p className='sendMail__error'>Message is Required!</p>}
 
         <div className='sendMail__options'>
           <Button className='sendMail__send' variant='contained' color='primary' type='submit'>
