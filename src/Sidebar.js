@@ -25,12 +25,36 @@ function Sidebar({ collapsed }) {
   const [trashCount, setTrashCount] = useState(0);
   const [allCount, setAllCount] = useState(0);
   const [showMore, setShowMore] = useState(false);
+  const [starCount, setStarCount] = useState(0);
+  const [snoozedCount, setSnoozedCount] = useState(0);
+  const [sentCount, setSentCount] = useState(0);
+  const [draftCount, setDraftCount] = useState(0);
 
   useEffect(() => {
     const unsubInbox = db
       .collection('emails')
       .where('folder', '==', 'inbox')
       .onSnapshot((snapshot) => setInboxCount(snapshot.size));
+
+    const unsubStarred = db
+      .collection('emails')
+      .where('folder', '==', 'starred')
+      .onSnapshot((snapshot) => setStarCount(snapshot.size));
+
+    const unsubSnoozed = db
+      .collection('emails')
+      .where('folder', '==', 'snoozed')
+      .onSnapshot((snapshot) => setSnoozedCount(snapshot.size));
+
+    const unsubSent = db
+      .collection('emails')
+      .where('folder', '==', 'sent')
+      .onSnapshot((snapshot) => setSentCount(snapshot.size));
+
+    const unsubDrafts = db
+      .collection('emails')
+      .where('folder', '==', 'drafts')
+      .onSnapshot((snapshot) => setDraftCount(snapshot.size));
 
     const unsubSpam = db
       .collection('emails')
@@ -46,6 +70,10 @@ function Sidebar({ collapsed }) {
 
     return () => {
       unsubInbox();
+      unsubStarred();
+      unsubSnoozed();
+      unsubSent();
+      unsubDrafts();
       unsubSpam();
       unsubTrash();
       unsubAll();
@@ -73,22 +101,28 @@ function Sidebar({ collapsed }) {
         collapsed={collapsed}
         Icon={StarIcon}
         title='Starred'
-        number={0}
+        number={starCount}
         path='/starred'
       />
       <SidebarOption
         collapsed={collapsed}
         Icon={AccessTimeIcon}
         title='Snoozed'
-        number={0}
+        number={snoozedCount}
         path='/snoozed'
       />
-      <SidebarOption collapsed={collapsed} Icon={NearMeIcon} title='Sent' number={0} path='/sent' />
+      <SidebarOption
+        collapsed={collapsed}
+        Icon={NearMeIcon}
+        title='Sent'
+        number={sentCount}
+        path='/sent'
+      />
       <SidebarOption
         collapsed={collapsed}
         Icon={NoteIcon}
         title='Drafts'
-        number={0}
+        number={draftCount}
         path='/drafts'
       />
 

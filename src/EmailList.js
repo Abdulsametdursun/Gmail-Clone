@@ -14,6 +14,7 @@ import './EmailList.css';
 import Section from './Section';
 import EmailRow from './EmailRow';
 import { db } from './firebase';
+import filterEmails from './utils/filterEmails';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import VirtualKeyboard from './VirtualKeyboard';
@@ -73,11 +74,13 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
       .orderBy('timestamp', 'desc')
       .get()
       .then((snapshot) => {
-        const filtered = snapshot.docs
-          .map((doc) => ({ id: doc.id, data: doc.data() }))
-          .filter((email) => email.data.folder === folder)
-          .filter((email) => email.data.category === selectedTab);
-        setEmails(filtered);
+        const items = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
+        const filtered = filterEmails(
+          items.map((e) => ({ id: e.id, ...e.data })),
+          folder,
+          selectedTab,
+        );
+        setEmails(filtered.map((e) => ({ id: e.id, data: { ...e } })));
       });
   };
 
@@ -192,21 +195,25 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
       {showKeyboard && <VirtualKeyboard onClose={handleKeyboardClose} />}
 
       <div className='emailList__list'>
-        {emails.map(
-          ({ id, data: { to, subject, message, timestamp, folder: mailFolder, read } }) => (
-            <EmailRow
-              key={id}
-              id={id}
-              title={to}
-              subject={subject}
-              description={message}
-              time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
-              folder={mailFolder}
-              read={read}
-              selected={selectedEmails.includes(id)}
-              onSelect={toggleSelectEmail}
-            />
-          ),
+        {emails.length === 0 ? (
+          <div className='emailList__empty'>No emails to display</div>
+        ) : (
+          emails.map(
+            ({ id, data: { to, subject, message, timestamp, folder: mailFolder, read } }) => (
+              <EmailRow
+                key={id}
+                id={id}
+                title={to}
+                subject={subject}
+                description={message}
+                time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
+                folder={mailFolder}
+                read={read}
+                selected={selectedEmails.includes(id)}
+                onSelect={toggleSelectEmail}
+              />
+            ),
+          )
         )}
       </div>
     </div>

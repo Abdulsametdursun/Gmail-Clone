@@ -2,6 +2,7 @@ import React from 'react';
 import './Mail.css';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoveToInboxIcon from '@material-ui/icons/MoveToInbox';
+import StarIcon from '@material-ui/icons/Star';
 import ErrorIcon from '@material-ui/icons/Error';
 import DeleteIcon from '@material-ui/icons/Delete';
 import WatchLaterIcon from '@material-ui/icons/WatchLater';
@@ -74,20 +75,24 @@ function Mail() {
             <MoveToInboxIcon />
           </IconButton>
 
+          <IconButton onClick={() => moveEmailTo('starred')}>
+            <StarIcon />
+          </IconButton>
+
+          <IconButton onClick={() => moveEmailTo('snoozed')}>
+            <WatchLaterIcon />
+          </IconButton>
+
+          <IconButton onClick={() => moveEmailTo('important')}>
+            <LabelImportantIcon />
+          </IconButton>
+
           <IconButton onClick={() => moveEmailTo('spam')}>
             <ErrorIcon />
           </IconButton>
 
           <IconButton onClick={() => moveEmailTo('trash')}>
             <DeleteIcon />
-          </IconButton>
-
-          <IconButton>
-            <WatchLaterIcon />
-          </IconButton>
-
-          <IconButton onClick={() => moveEmailTo('important')}>
-            <LabelImportantIcon />
           </IconButton>
         </div>
 

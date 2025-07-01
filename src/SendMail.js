@@ -19,9 +19,10 @@ function SendMail() {
       subject: formData.subject,
       message: formData.message,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      folder: 'inbox',
+      folder: 'sent',
       category: 'Primary',
-      read: false,
+      labels: ['Sent'],
+      read: true,
     });
 
     dispatch(closeSendMessage());

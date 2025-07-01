@@ -40,6 +40,15 @@
   color: black !important;
 }
 
+/* Center icon when collapsed */
+.sidebar--collapsed .sidebar__compose .MuiButton-label {
+  justify-content: center;
+}
+
+.sidebar--collapsed .sidebar__compose .MuiButton-startIcon {
+  margin: 0;
+}
+
 /* Hide text label in compose button when collapsed but keep the icon */
 .sidebar--collapsed .sidebar__composeText {
   display: none;

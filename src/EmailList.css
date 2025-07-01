@@ -38,6 +38,12 @@
   padding-bottom: 20%;
 }
 
+.emailList__empty {
+  padding: 40px 0;
+  text-align: center;
+  color: gray;
+}
+
 .emailList__keyboardInput {
   width: 100%;
   padding: 10px;
