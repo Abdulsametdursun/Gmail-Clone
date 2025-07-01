@@ -17,8 +17,10 @@ function App() {
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
   const [darkTheme, setDarkTheme] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleTheme = () => setDarkTheme((prev) => !prev);
+  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -42,9 +44,9 @@ function App() {
         <Login />
       ) : (
         <div className={`app ${darkTheme ? 'dark-theme' : 'light-theme'}`}>
-          <Header />
+          <Header onToggleSidebar={toggleSidebar} />
           <div className='app__body'>
-            <Sidebar />
+            <Sidebar collapsed={sidebarCollapsed} />
             <Switch>
               <Route path='/mail'>
                 <Mail />

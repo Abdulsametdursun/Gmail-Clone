@@ -18,7 +18,7 @@ import { useDispatch } from 'react-redux';
 import { openSendMessage } from './features/mailSlice';
 import { db } from './firebase';
 
-function Sidebar() {
+function Sidebar({ collapsed }) {
   const dispatch = useDispatch();
   const [inboxCount, setInboxCount] = useState(0);
   const [spamCount, setSpamCount] = useState(0);
@@ -53,26 +53,51 @@ function Sidebar() {
   }, []);
 
   return (
-    <div className='sidebar'>
+    <div className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
       <Button
         startIcon={<CreateIcon fontSize='large' />}
         className='sidebar__compose'
         onClick={() => dispatch(openSendMessage())}
       >
-        Compose
+        <span className='sidebar__composeText'>Compose</span>
       </Button>
 
-      <SidebarOption Icon={InboxIcon} title='Inbox' number={inboxCount} path='/' />
-      <SidebarOption Icon={StarIcon} title='Starred' number={0} path='/starred' />
-      <SidebarOption Icon={AccessTimeIcon} title='Snoozed' number={0} path='/snoozed' />
-      <SidebarOption Icon={NearMeIcon} title='Sent' number={0} path='/sent' />
-      <SidebarOption Icon={NoteIcon} title='Drafts' number={0} path='/drafts' />
+      <SidebarOption
+        collapsed={collapsed}
+        Icon={InboxIcon}
+        title='Inbox'
+        number={inboxCount}
+        path='/'
+      />
+      <SidebarOption
+        collapsed={collapsed}
+        Icon={StarIcon}
+        title='Starred'
+        number={0}
+        path='/starred'
+      />
+      <SidebarOption
+        collapsed={collapsed}
+        Icon={AccessTimeIcon}
+        title='Snoozed'
+        number={0}
+        path='/snoozed'
+      />
+      <SidebarOption collapsed={collapsed} Icon={NearMeIcon} title='Sent' number={0} path='/sent' />
+      <SidebarOption
+        collapsed={collapsed}
+        Icon={NoteIcon}
+        title='Drafts'
+        number={0}
+        path='/drafts'
+      />
 
       <SidebarOption
         Icon={showMore ? ExpandLessIcon : ExpandMoreIcon}
         title='More'
         number={0}
         onClick={() => setShowMore(!showMore)}
+        collapsed={collapsed}
       />
 
       {showMore && (
@@ -83,10 +108,32 @@ function Sidebar() {
             number={0}
             path='/important'
             nested
+            collapsed={collapsed}
           />
-          <SidebarOption Icon={MailIcon} title='All Mail' number={allCount} path='/all' nested />
-          <SidebarOption Icon={ReportIcon} title='Spam' number={spamCount} path='/spam' nested />
-          <SidebarOption Icon={DeleteIcon} title='Trash' number={trashCount} path='/trash' nested />
+          <SidebarOption
+            collapsed={collapsed}
+            Icon={MailIcon}
+            title='All Mail'
+            number={allCount}
+            path='/all'
+            nested
+          />
+          <SidebarOption
+            collapsed={collapsed}
+            Icon={ReportIcon}
+            title='Spam'
+            number={spamCount}
+            path='/spam'
+            nested
+          />
+          <SidebarOption
+            collapsed={collapsed}
+            Icon={DeleteIcon}
+            title='Trash'
+            number={trashCount}
+            path='/trash'
+            nested
+          />
         </>
       )}
     </div>

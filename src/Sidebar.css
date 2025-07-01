@@ -2,6 +2,26 @@
   flex: 0.3;
   max-width: 250px;
   padding-right: 20px;
+  overflow-y: auto;
+  height: 100vh;
+  transition: max-width 0.3s ease;
+}
+
+.sidebar--collapsed {
+  max-width: 70px;
+  flex: 0 0 70px;
+  padding-right: 0;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.sidebar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .sidebar__compose {
@@ -20,6 +40,17 @@
   color: black !important;
 }
 
+/* Hide text label in compose button when collapsed but keep the icon */
+.sidebar--collapsed .sidebar__composeText {
+  display: none;
+}
+
+.sidebar--collapsed .sidebar__compose {
+  min-width: 48px;
+  padding: 15px 0 !important;
+  margin-left: 0 !important;
+}
+
 @media (prefers-color-scheme: dark) {
   .sidebar__compose {
     color: black !important;
@@ -30,4 +61,13 @@
 .sidebar__footer {
   display: flex;
   justify-content: center;
+}
+
+.sidebar--collapsed .sidebarOption {
+  justify-content: center;
+}
+
+.sidebar--collapsed .sidebarOption > h3,
+.sidebar--collapsed .sidebarOption > p {
+  display: none;
 }

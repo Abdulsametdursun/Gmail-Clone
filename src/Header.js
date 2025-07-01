@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectUser } from './features/userSlice';
 import { auth } from './firebase';
 
-function Header() {
+function Header({ onToggleSidebar }) {
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
 
@@ -22,7 +22,7 @@ function Header() {
   return (
     <div className='header'>
       <div className='header__left'>
-        <IconButton>
+        <IconButton onClick={onToggleSidebar}>
           <MenuIcon />
         </IconButton>
         <img

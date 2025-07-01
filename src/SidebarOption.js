@@ -2,7 +2,7 @@ import React from 'react';
 import './SidebarOption.css';
 import { useHistory, useLocation } from 'react-router-dom';
 
-function SidebarOption({ Icon, title, number, path, onClick, nested }) {
+function SidebarOption({ Icon, title, number, path, onClick, nested, collapsed }) {
   const history = useHistory();
   const location = useLocation();
 
@@ -13,7 +13,7 @@ function SidebarOption({ Icon, title, number, path, onClick, nested }) {
     <div
       className={`sidebarOption ${selected ? 'sidebarOption--active' : ''} ${
         nested ? 'sidebarOption--nested' : ''
-      }`}
+      } ${collapsed ? 'collapsed' : ''}`}
       onClick={() => {
         if (onClick) onClick();
         if (path) history.push(path);
