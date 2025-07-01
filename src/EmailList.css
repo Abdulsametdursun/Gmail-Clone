@@ -37,3 +37,16 @@
 .emailList__list {
   padding-bottom: 20%;
 }
+
+.emailList__keyboardInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid lightgray;
+  outline: none;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.emailList__keyboardContainer {
+  margin-bottom: 10px;
+}

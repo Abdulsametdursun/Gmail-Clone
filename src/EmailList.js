@@ -16,14 +16,24 @@ import EmailRow from './EmailRow';
 import { db } from './firebase';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import VirtualKeyboard from './VirtualKeyboard';
 
 function EmailList({ toggleTheme, folder = 'inbox' }) {
   const [emails, setEmails] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [showKeyboard, setShowKeyboard] = useState(false);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
+  };
+
+  const handleKeyboardOpen = () => {
+    setShowKeyboard((prev) => !prev);
+  };
+
+  const handleKeyboardClose = () => {
+    setShowKeyboard(false);
   };
 
   const handleMenuClose = () => {
@@ -59,7 +69,7 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
           </IconButton>
         </div>
         <div className='emailList__settingsRight'>
-          <IconButton>
+          <IconButton onClick={handleKeyboardOpen}>
             <KeyboardHideIcon />
           </IconButton>
           <IconButton onClick={handleMenuOpen}>
@@ -86,6 +96,8 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
         <Section Icon={Info} title='Updates' color='purple' />
         <Section Icon={ForumIcon} title='Forms' color='orange' />
       </div>
+
+      {showKeyboard && <VirtualKeyboard onClose={handleKeyboardClose} />}
 
       <div className='emailList__list'>
         {emails.map(({ id, data: { to, subject, message, timestamp, folder: mailFolder } }) => (

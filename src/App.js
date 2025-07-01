@@ -49,6 +49,9 @@ function App() {
               <Route path='/mail'>
                 <Mail />
               </Route>
+              <Route path='/all'>
+                <EmailList toggleTheme={toggleTheme} folder='all' />
+              </Route>
               <Route path='/spam'>
                 <EmailList toggleTheme={toggleTheme} folder='spam' />
               </Route>

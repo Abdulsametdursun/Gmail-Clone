@@ -1,0 +1,56 @@
+.virtualKeyboard {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: inline-block;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid lightgray;
+  border-radius: 4px;
+}
+
+.virtualKeyboard__row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.virtualKeyboard__key,
+.virtualKeyboard__space,
+.virtualKeyboard__close {
+  margin: 2px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.virtualKeyboard__space {
+  flex: 1;
+}
+
+.virtualKeyboard__row--1 {
+  margin-left: 10px;
+}
+
+.virtualKeyboard__row--2 {
+  margin-left: 20px;
+}
+
+.virtualKeyboard__row--3 {
+  margin-left: 30px;
+}
+
+.virtualKeyboard__row--bottom {
+  margin-left: 30px;
+}
+
+.virtualKeyboard__key--active {
+  background-color: #ddd;
+}
+
+.virtualKeyboard__closeBtn {
+  display: block;
+  margin: 4px auto 0;
+}

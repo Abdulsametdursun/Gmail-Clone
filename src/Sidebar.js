@@ -20,19 +20,36 @@ import { db } from './firebase';
 
 function Sidebar() {
   const dispatch = useDispatch();
-  const [emails, setEmails] = useState([]);
+  const [inboxCount, setInboxCount] = useState(0);
+  const [spamCount, setSpamCount] = useState(0);
+  const [trashCount, setTrashCount] = useState(0);
+  const [allCount, setAllCount] = useState(0);
   const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = db.collection('emails').onSnapshot((snapshot) =>
-      setEmails(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          data: doc.data(),
-        })),
-      ),
-    );
-    return () => unsubscribe();
+    const unsubInbox = db
+      .collection('emails')
+      .where('folder', '==', 'inbox')
+      .onSnapshot((snapshot) => setInboxCount(snapshot.size));
+
+    const unsubSpam = db
+      .collection('emails')
+      .where('folder', '==', 'spam')
+      .onSnapshot((snapshot) => setSpamCount(snapshot.size));
+
+    const unsubTrash = db
+      .collection('emails')
+      .where('folder', '==', 'trash')
+      .onSnapshot((snapshot) => setTrashCount(snapshot.size));
+
+    const unsubAll = db.collection('emails').onSnapshot((snapshot) => setAllCount(snapshot.size));
+
+    return () => {
+      unsubInbox();
+      unsubSpam();
+      unsubTrash();
+      unsubAll();
+    };
   }, []);
 
   return (
@@ -45,7 +62,7 @@ function Sidebar() {
         Compose
       </Button>
 
-      <SidebarOption Icon={InboxIcon} title='Inbox' number={emails.length} path='/' />
+      <SidebarOption Icon={InboxIcon} title='Inbox' number={inboxCount} path='/' />
       <SidebarOption Icon={StarIcon} title='Starred' number={0} path='/starred' />
       <SidebarOption Icon={AccessTimeIcon} title='Snoozed' number={0} path='/snoozed' />
       <SidebarOption Icon={NearMeIcon} title='Sent' number={0} path='/sent' />
@@ -67,9 +84,9 @@ function Sidebar() {
             path='/important'
             nested
           />
-          <SidebarOption Icon={MailIcon} title='All Mail' number={0} path='/all' nested />
-          <SidebarOption Icon={ReportIcon} title='Spam' number={0} path='/spam' nested />
-          <SidebarOption Icon={DeleteIcon} title='Trash' number={0} path='/trash' nested />
+          <SidebarOption Icon={MailIcon} title='All Mail' number={allCount} path='/all' nested />
+          <SidebarOption Icon={ReportIcon} title='Spam' number={spamCount} path='/spam' nested />
+          <SidebarOption Icon={DeleteIcon} title='Trash' number={trashCount} path='/trash' nested />
         </>
       )}
     </div>
