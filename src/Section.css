@@ -23,6 +23,14 @@
   border-width: 3px !important;
 }
 
+.app.dark-theme .section--selected {
+  background-color: #333;
+}
+
+.app.dark-theme .section:hover {
+  background-color: #333;
+}
+
 .section:hover {
   background-color: whitesmoke;
   border-width: 3px !important;

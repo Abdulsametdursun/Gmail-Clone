@@ -47,3 +47,17 @@
   font-weight: 400;
   color: gray;
 }
+
+.emailRow--unread .emailRow__title,
+.emailRow--unread .emailRow__message,
+.emailRow--unread .emailRow__time {
+  font-weight: bold;
+}
+
+.emailRow--selected {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.app.light-theme .emailRow--selected {
+  background-color: rgba(0, 0, 0, 0.05);
+}

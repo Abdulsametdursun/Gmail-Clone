@@ -20,53 +20,115 @@ import VirtualKeyboard from './VirtualKeyboard';
 
 function EmailList({ toggleTheme, folder = 'inbox' }) {
   const [emails, setEmails] = useState([]);
+  const [selectedEmails, setSelectedEmails] = useState([]);
+  const [selectedTab, setSelectedTab] = useState('Primary');
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [optionsAnchor, setOptionsAnchor] = useState(null);
+  const optionsOpen = Boolean(optionsAnchor);
   const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleOptionsOpen = (event) => setOptionsAnchor(event.currentTarget);
+  const handleKeyboardOpen = () => setShowKeyboard((prev) => !prev);
+  const handleKeyboardClose = () => setShowKeyboard(false);
+  const handleMenuClose = () => setAnchorEl(null);
+  const handleOptionsClose = () => setOptionsAnchor(null);
+
+  const toggleSelectEmail = (id) => {
+    setSelectedEmails((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
   };
 
-  const handleKeyboardOpen = () => {
-    setShowKeyboard((prev) => !prev);
+  const handleSelectAllChange = (e) => {
+    if (e.target.checked) {
+      setSelectedEmails(emails.map((email) => email.id));
+    } else {
+      setSelectedEmails([]);
+    }
   };
 
-  const handleKeyboardClose = () => {
-    setShowKeyboard(false);
+  const markAsRead = () => {
+    selectedEmails.forEach((id) => {
+      db.collection('emails').doc(id).update({ read: true });
+    });
+    setSelectedEmails([]);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const markAsUnread = () => {
+    selectedEmails.forEach((id) => {
+      db.collection('emails').doc(id).update({ read: false });
+    });
+    setSelectedEmails([]);
+  };
+
+  const deleteSelected = () => {
+    selectedEmails.forEach((id) => {
+      db.collection('emails').doc(id).update({ folder: 'trash' });
+    });
+    setSelectedEmails([]);
+  };
+
+  const fetchEmails = () => {
+    db.collection('emails')
+      .orderBy('timestamp', 'desc')
+      .get()
+      .then((snapshot) => {
+        const filtered = snapshot.docs
+          .map((doc) => ({ id: doc.id, data: doc.data() }))
+          .filter((email) => email.data.folder === folder)
+          .filter((email) => email.data.category === selectedTab);
+        setEmails(filtered);
+      });
   };
 
   useEffect(() => {
-    const unsubscribe = db
-      .collection('emails')
-      .orderBy('timestamp', 'desc')
-      .onSnapshot((snapshot) => {
-        const filtered = snapshot.docs
-          .map((doc) => ({ id: doc.id, data: doc.data() }))
-          .filter((email) => email.data.folder === folder);
-        setEmails(filtered);
-      });
-    return () => unsubscribe();
-  }, [folder]);
+    fetchEmails();
+  }, [folder, selectedTab]);
 
   return (
     <div className='emailList'>
       <div className='emailList__settings'>
         <div className='emailList__settingsLeft'>
-          <Checkbox />
+          <Checkbox
+            indeterminate={selectedEmails.length > 0 && selectedEmails.length < emails.length}
+            checked={emails.length > 0 && selectedEmails.length === emails.length}
+            onChange={handleSelectAllChange}
+          />
           <IconButton>
             <ArrowDropDownIcon />
           </IconButton>
-          <IconButton>
+          <IconButton onClick={fetchEmails}>
             <RefreshIcon />
           </IconButton>
-          <IconButton>
+          <IconButton onClick={handleOptionsOpen}>
             <MoreVertIcon />
           </IconButton>
+          <Menu anchorEl={optionsAnchor} open={optionsOpen} onClose={handleOptionsClose}>
+            <MenuItem
+              onClick={() => {
+                markAsRead();
+                handleOptionsClose();
+              }}
+            >
+              Mark as read
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                markAsUnread();
+                handleOptionsClose();
+              }}
+            >
+              Mark as unread
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                deleteSelected();
+                handleOptionsClose();
+              }}
+            >
+              Delete
+            </MenuItem>
+          </Menu>
         </div>
         <div className='emailList__settingsRight'>
           <IconButton onClick={handleKeyboardOpen}>
@@ -90,27 +152,62 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
       </div>
 
       <div className='emailList__sections'>
-        <Section Icon={InboxIcon} title='Primary' color='red' selected />
-        <Section Icon={LocalOfferIcon} title='Promotions' color='green' />
-        <Section Icon={PeopleIcon} title='Social' color='blue' />
-        <Section Icon={Info} title='Updates' color='purple' />
-        <Section Icon={ForumIcon} title='Forms' color='orange' />
+        <Section
+          Icon={InboxIcon}
+          title='Primary'
+          color='red'
+          selected={selectedTab === 'Primary'}
+          onClick={() => setSelectedTab('Primary')}
+        />
+        <Section
+          Icon={LocalOfferIcon}
+          title='Promotions'
+          color='green'
+          selected={selectedTab === 'Promotions'}
+          onClick={() => setSelectedTab('Promotions')}
+        />
+        <Section
+          Icon={PeopleIcon}
+          title='Social'
+          color='blue'
+          selected={selectedTab === 'Social'}
+          onClick={() => setSelectedTab('Social')}
+        />
+        <Section
+          Icon={Info}
+          title='Updates'
+          color='purple'
+          selected={selectedTab === 'Updates'}
+          onClick={() => setSelectedTab('Updates')}
+        />
+        <Section
+          Icon={ForumIcon}
+          title='Forms'
+          color='orange'
+          selected={selectedTab === 'Forms'}
+          onClick={() => setSelectedTab('Forms')}
+        />
       </div>
 
       {showKeyboard && <VirtualKeyboard onClose={handleKeyboardClose} />}
 
       <div className='emailList__list'>
-        {emails.map(({ id, data: { to, subject, message, timestamp, folder: mailFolder } }) => (
-          <EmailRow
-            key={id}
-            id={id}
-            title={to}
-            subject={subject}
-            description={message}
-            time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
-            folder={mailFolder}
-          />
-        ))}
+        {emails.map(
+          ({ id, data: { to, subject, message, timestamp, folder: mailFolder, read } }) => (
+            <EmailRow
+              key={id}
+              id={id}
+              title={to}
+              subject={subject}
+              description={message}
+              time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
+              folder={mailFolder}
+              read={read}
+              selected={selectedEmails.includes(id)}
+              onSelect={toggleSelectEmail}
+            />
+          ),
+        )}
       </div>
     </div>
   );

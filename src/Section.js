@@ -1,7 +1,7 @@
 import React from 'react';
 import './Section.css';
 
-function Section({ Icon, title, color, selected }) {
+function Section({ Icon, title, color, selected, onClick }) {
   return (
     <div
       className={`section ${selected && 'section--selected'}`}
@@ -9,6 +9,7 @@ function Section({ Icon, title, color, selected }) {
         borderBottom: `3px solid ${color}`,
         color: selected ? color : '',
       }}
+      onClick={onClick}
     >
       <Icon />
       <h4>{title}</h4>

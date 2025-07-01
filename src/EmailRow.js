@@ -9,7 +9,7 @@ import { useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { selectMail } from './features/mailSlice';
 
-function EmailRow({ id, title, subject, description, time, folder }) {
+function EmailRow({ id, title, subject, description, time, folder, read, selected, onSelect }) {
   const history = useHistory();
   const dispatch = useDispatch();
 
@@ -29,13 +29,22 @@ function EmailRow({ id, title, subject, description, time, folder }) {
   };
 
   return (
-    <div onClick={openMail} className='emailRow'>
+    <div
+      onClick={openMail}
+      className={`emailRow ${!read ? 'emailRow--unread' : ''} ${
+        selected ? 'emailRow--selected' : ''
+      }`}
+    >
       <div className='emailRow__options'>
-        <Checkbox />
-        <IconButton>
+        <Checkbox
+          checked={selected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => onSelect(id)}
+        />
+        <IconButton onClick={(e) => e.stopPropagation()}>
           <StarBorderOutlinedIcon />
         </IconButton>
-        <IconButton>
+        <IconButton onClick={(e) => e.stopPropagation()}>
           <LabelImportantOutlinedIcon />
         </IconButton>
       </div>
