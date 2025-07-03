@@ -49,42 +49,53 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
     }
   };
 
-  const markAsRead = () => {
-    selectedEmails.forEach((id) => {
-      db.collection('emails').doc(id).update({ read: true });
-    });
+  const markAsRead = async () => {
+    await Promise.all(
+      selectedEmails.map((id) => db.collection('emails').doc(id).update({ read: true })),
+    );
+    await fetchEmails();
     setSelectedEmails([]);
   };
 
-  const markAsUnread = () => {
-    selectedEmails.forEach((id) => {
-      db.collection('emails').doc(id).update({ read: false });
-    });
+  const markAsUnread = async () => {
+    await Promise.all(
+      selectedEmails.map((id) => db.collection('emails').doc(id).update({ read: false })),
+    );
+    await fetchEmails();
     setSelectedEmails([]);
   };
 
-  const deleteSelected = () => {
-    selectedEmails.forEach((id) => {
-      db.collection('emails').doc(id).update({ folder: 'trash' });
-    });
+  const deleteSelected = async () => {
+    await Promise.all(
+      selectedEmails.map(async (id) => {
+        const docRef = db.collection('emails').doc(id);
+        const snapshot = await docRef.get();
+        const currentFolder = snapshot.data().folder;
+        if (currentFolder === 'trash') {
+          await docRef.delete();
+        } else {
+          await docRef.update({ folder: 'trash' });
+        }
+      }),
+    );
     setSelectedEmails([]);
+    await fetchEmails();
   };
 
   const fetchEmails = async () => {
     try {
       const snapshot = await db.collection('emails').orderBy('timestamp', 'desc').get();
-      const items = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
-      const filtered = filterEmails(
-        items.map((e) => ({ id: e.id, ...e.data })),
-        folder,
-        selectedTab,
-      );
-      setEmails(filtered.map((e) => ({ id: e.id, data: { ...e } })));
+      const items = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      const filtered = filterEmails(items, folder, selectedTab);
+      setEmails(filtered);
     } catch (e) {
       if (folder === 'drafts') {
         const drafts = await loadDrafts();
         const filtered = filterEmails(drafts, folder, selectedTab);
-        setEmails(filtered.map((e) => ({ id: e.id, data: { ...e } })));
+        setEmails(filtered);
       } else {
         setEmails([]);
       }
@@ -205,22 +216,20 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
         {emails.length === 0 ? (
           <div className='emailList__empty'>No emails to display</div>
         ) : (
-          emails.map(
-            ({ id, data: { to, subject, message, timestamp, folder: mailFolder, read } }) => (
-              <EmailRow
-                key={id}
-                id={id}
-                title={to}
-                subject={subject}
-                description={message}
-                time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
-                folder={mailFolder}
-                read={read}
-                selected={selectedEmails.includes(id)}
-                onSelect={toggleSelectEmail}
-              />
-            ),
-          )
+          emails.map(({ id, to, subject, message, timestamp, folder: mailFolder, read }) => (
+            <EmailRow
+              key={id}
+              id={id}
+              title={to}
+              subject={subject}
+              description={message}
+              time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
+              folder={mailFolder}
+              read={read}
+              selected={selectedEmails.includes(id)}
+              onSelect={toggleSelectEmail}
+            />
+          ))
         )}
       </div>
     </div>
