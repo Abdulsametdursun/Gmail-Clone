@@ -18,6 +18,7 @@ import filterEmails from './utils/filterEmails';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import VirtualKeyboard from './VirtualKeyboard';
+import { loadDrafts } from './utils/draftStorage';
 
 function EmailList({ toggleTheme, folder = 'inbox' }) {
   const [emails, setEmails] = useState([]);
@@ -69,19 +70,25 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
     setSelectedEmails([]);
   };
 
-  const fetchEmails = () => {
-    db.collection('emails')
-      .orderBy('timestamp', 'desc')
-      .get()
-      .then((snapshot) => {
-        const items = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
-        const filtered = filterEmails(
-          items.map((e) => ({ id: e.id, ...e.data })),
-          folder,
-          selectedTab,
-        );
+  const fetchEmails = async () => {
+    try {
+      const snapshot = await db.collection('emails').orderBy('timestamp', 'desc').get();
+      const items = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
+      const filtered = filterEmails(
+        items.map((e) => ({ id: e.id, ...e.data })),
+        folder,
+        selectedTab,
+      );
+      setEmails(filtered.map((e) => ({ id: e.id, data: { ...e } })));
+    } catch (e) {
+      if (folder === 'drafts') {
+        const drafts = await loadDrafts();
+        const filtered = filterEmails(drafts, folder, selectedTab);
         setEmails(filtered.map((e) => ({ id: e.id, data: { ...e } })));
-      });
+      } else {
+        setEmails([]);
+      }
+    }
   };
 
   useEffect(() => {

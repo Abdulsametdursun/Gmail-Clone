@@ -3,29 +3,39 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { IconButton } from '@material-ui/core';
 import StarBorderOutlinedIcon from '@material-ui/icons/StarBorderOutlined';
 import LabelImportantOutlinedIcon from '@material-ui/icons/LabelImportantOutlined';
-
 import './EmailRow.css';
 import { useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { selectMail } from './features/mailSlice';
+import { selectMail, openSendMessage, setDraft } from './features/mailSlice';
 
 function EmailRow({ id, title, subject, description, time, folder, read, selected, onSelect }) {
   const history = useHistory();
   const dispatch = useDispatch();
 
   const openMail = () => {
-    dispatch(
-      selectMail({
-        id,
-        title,
-        subject,
-        description,
-        time,
-        folder,
-      }),
-    );
-
-    history.push('/mail');
+    if (folder === 'drafts') {
+      dispatch(
+        setDraft({
+          id,
+          to: title,
+          subject,
+          message: description,
+        }),
+      );
+      dispatch(openSendMessage());
+    } else {
+      dispatch(
+        selectMail({
+          id,
+          title,
+          subject,
+          description,
+          time,
+          folder,
+        }),
+      );
+      history.push('/mail');
+    }
   };
 
   return (

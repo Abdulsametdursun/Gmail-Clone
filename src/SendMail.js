@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './SendMail.css';
 import CloseIcon from '@material-ui/icons/Close';
 import { Button } from '@material-ui/core';
 import { useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux';
-import { closeSendMessage } from './features/mailSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { closeSendMessage, selectDraft, clearDraft } from './features/mailSlice';
 import { db } from './firebase';
 import firebase from 'firebase';
+import { saveDraft, deleteDraft } from './utils/draftStorage';
 
 function SendMail() {
-  const { register, handleSubmit, errors } = useForm();
+  const draft = useSelector(selectDraft);
+  const { register, handleSubmit, errors, reset } = useForm({
+    defaultValues: draft || {},
+  });
   const dispatch = useDispatch();
 
-  const onSubmit = (formData) => {
+  useEffect(() => {
+    reset(draft || {});
+  }, [draft, reset]);
+
+  const onSubmit = async (formData) => {
     console.log(formData);
-    db.collection('emails').add({
+    await db.collection('emails').add({
       to: formData.to,
       subject: formData.subject,
       message: formData.message,
@@ -24,7 +32,22 @@ function SendMail() {
       labels: ['Sent'],
       read: true,
     });
+    if (draft?.id) {
+      await deleteDraft(draft.id);
+    }
 
+    dispatch(clearDraft());
+    dispatch(closeSendMessage());
+  };
+
+  const onSaveDraft = async (formData) => {
+    const result = await saveDraft({
+      id: draft?.id,
+      to: formData.to,
+      subject: formData.subject,
+      message: formData.message,
+    });
+    dispatch(clearDraft());
     dispatch(closeSendMessage());
   };
 
@@ -59,6 +82,14 @@ function SendMail() {
         <div className='sendMail__options'>
           <Button className='sendMail__send' variant='contained' color='primary' type='submit'>
             Send
+          </Button>
+          <Button
+            className='sendMail__draft'
+            variant='contained'
+            style={{ backgroundColor: '#f4b400', color: '#000' }}
+            onClick={handleSubmit(onSaveDraft)}
+          >
+            Draft
           </Button>
         </div>
       </form>
