@@ -1,7 +1,13 @@
-export const fetchGmailMessages = async (accessToken) => {
+export const fetchGmailMessages = async (accessToken, labelIds = []) => {
   try {
+    const params = new URLSearchParams({ maxResults: '25' });
+    labelIds.forEach((id) => params.append('labelIds', id));
+    if (labelIds.includes('SPAM') || labelIds.includes('TRASH')) {
+      params.append('includeSpamTrash', 'true');
+    }
+
     const listRes = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25',
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -21,7 +27,7 @@ export const fetchGmailMessages = async (accessToken) => {
     const messages = await Promise.all(
       messageIds.map(async ({ id }) => {
         const msgRes = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=To&metadataHeaders=From&metadataHeaders=Subject`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -34,15 +40,44 @@ export const fetchGmailMessages = async (accessToken) => {
         const getHeader = (name) =>
           headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
+        const labelIds = msg.labelIds || [];
+
+        const folderMap = {
+          INBOX: 'inbox',
+          SENT: 'sent',
+          DRAFT: 'drafts',
+          SPAM: 'spam',
+          TRASH: 'trash',
+          IMPORTANT: 'important',
+          STARRED: 'starred',
+          SNOOZED: 'snoozed',
+        };
+
+        const categoryMap = {
+          CATEGORY_PERSONAL: 'Primary',
+          CATEGORY_PROMOTIONS: 'Promotions',
+          CATEGORY_SOCIAL: 'Social',
+          CATEGORY_UPDATES: 'Updates',
+          CATEGORY_FORUMS: 'Forms',
+        };
+
+        const folderKey = Object.keys(folderMap).find((l) => labelIds.includes(l));
+        const folder = folderKey ? folderMap[folderKey] : 'all';
+
+        const categoryKey = Object.keys(categoryMap).find((l) => labelIds.includes(l));
+        const category = categoryKey ? categoryMap[categoryKey] : '';
+
         return {
           id: msg.id,
           from: getHeader('From'),
           to: getHeader('To'),
           subject: getHeader('Subject'),
           message: msg.snippet,
-          timestamp: new Date(parseInt(msg.internalDate)),
-          folder: 'inbox',
-          read: !msg.labelIds?.includes('UNREAD'),
+          timestamp: { seconds: Math.floor(parseInt(msg.internalDate, 10) / 1000) },
+          folder,
+          category,
+          labels: labelIds,
+          read: !labelIds.includes('UNREAD'),
         };
       }),
     );

@@ -80,8 +80,19 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
     try {
       let fetched = [];
 
-      if (folder === 'inbox' && user?.token) {
-        fetched = await fetchGmailMessages(user.token);
+      const labelMap = {
+        inbox: ['INBOX'],
+        sent: ['SENT'],
+        spam: ['SPAM'],
+        trash: ['TRASH'],
+        starred: ['STARRED'],
+        snoozed: ['SNOOZED'],
+        important: ['IMPORTANT'],
+        all: [],
+      };
+
+      if (user?.token && Object.keys(labelMap).includes(folder)) {
+        fetched = await fetchGmailMessages(user.token, labelMap[folder]);
       } else if (folder === 'drafts') {
         fetched = await loadDrafts();
       } else {
@@ -224,11 +235,11 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
             {searchQuery ? 'No emails found' : 'No emails to display'}
           </div>
         ) : (
-          emails.map(({ id, to, subject, message, timestamp, folder: mailFolder, read }) => (
+          emails.map(({ id, to, from, subject, message, timestamp, folder: mailFolder, read }) => (
             <EmailRow
               key={id}
               id={id}
-              title={to}
+              title={mailFolder === 'sent' ? to : from || to}
               subject={subject}
               description={message}
               time={timestamp?.seconds ? new Date(timestamp.seconds * 1000).toUTCString() : ''}

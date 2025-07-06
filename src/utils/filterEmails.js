@@ -15,7 +15,7 @@ export default function filterEmails(emails = [], folder, category) {
       if (!folder || folder === 'all') return true;
 
       const label = folderMap[folder];
-      const hasLabel = label && email.labels?.includes(label);
+      const hasLabel = label && email.labels?.some((l) => l.toUpperCase() === label.toUpperCase());
 
       switch (folder) {
         case 'starred':
