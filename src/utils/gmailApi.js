@@ -1,44 +1,36 @@
-export const fetchGmailMessages = async () => {
+export const fetchGmailMessages = async (accessToken) => {
   try {
-    const user = gapi.auth2.getAuthInstance().currentUser.get();
-
-    if (!user.isSignedIn()) {
-      throw new Error('User not signed in');
-    }
-
-    const token = user.getAuthResponse().access_token;
-
-    const response = await fetch(
+    const listRes = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25',
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       },
     );
 
-    const data = await response.json();
+    const listData = await listRes.json();
 
-    if (!response.ok) {
-      console.error('Gmail fetch error:', data);
-      throw new Error(data.error.message);
+    if (!listRes.ok) {
+      console.error('Gmail fetch error:', listData);
+      throw new Error(listData.error?.message || 'Failed to fetch messages');
     }
 
-    const messageIds = data.messages || [];
+    const messageIds = listData.messages || [];
 
     const messages = await Promise.all(
       messageIds.map(async ({ id }) => {
-        const msgResponse = await fetch(
+        const msgRes = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );
 
-        const msg = await msgResponse.json();
-        const headers = msg.payload.headers;
+        const msg = await msgRes.json();
+        const headers = msg.payload?.headers || [];
         const getHeader = (name) =>
           headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
@@ -50,7 +42,7 @@ export const fetchGmailMessages = async () => {
           message: msg.snippet,
           timestamp: new Date(parseInt(msg.internalDate)),
           folder: 'inbox',
-          read: !msg.labelIds.includes('UNREAD'),
+          read: !msg.labelIds?.includes('UNREAD'),
         };
       }),
     );
@@ -62,7 +54,7 @@ export const fetchGmailMessages = async () => {
   }
 };
 
-export async function sendGmailMessage({ to, subject, message }) {
+export async function sendEmail(accessToken, { to, subject, message }) {
   const headers = [
     `To: ${to}`,
     'Content-Type: text/html; charset=UTF-8',
@@ -78,16 +70,20 @@ export async function sendGmailMessage({ to, subject, message }) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 
-  try {
-    const response = await window.gapi.client.gmail.users.messages.send({
-      userId: 'me',
-      resource: {
-        raw: base64EncodedEmail,
-      },
-    });
-    return response;
-  } catch (error) {
-    console.error('Failed to send Gmail message', error);
-    throw error;
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw: base64EncodedEmail }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    console.error('Failed to send Gmail message', err);
+    throw new Error(err.error?.message || 'Failed to send Gmail message');
   }
+
+  return res.json();
 }

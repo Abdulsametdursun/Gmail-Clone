@@ -32,21 +32,14 @@ function SendMail() {
           subject: formData.subject,
           message: formData.message,
         });
+        alert('Email sent successfully!');
       } catch (e) {
+        alert('Failed to send email');
         console.error('Failed to send via Gmail API', e);
+        return;
       }
-    }
-
-    try {
-      await sendGmailMessage({
-        to: formData.to,
-        subject: formData.subject,
-        message: formData.message,
-      });
-      alert('Email sent successfully!');
-    } catch (error) {
-      alert('Failed to send email');
-      console.error(error);
+    } else {
+      alert('Failed to send email: No OAuth token');
       return;
     }
 

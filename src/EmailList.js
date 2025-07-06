@@ -82,15 +82,6 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
 
       if (folder === 'inbox' && user?.token) {
         fetched = await fetchGmailMessages(user.token);
-        fetched = fetched.map((msg) => ({
-          id: msg.id,
-          to: msg.from,
-          subject: msg.subject,
-          message: msg.snippet,
-          timestamp: { seconds: Math.floor(Number(msg.internalDate) / 1000) },
-          folder: 'inbox',
-          read: true,
-        }));
       } else if (folder === 'drafts') {
         fetched = await loadDrafts();
       } else {
