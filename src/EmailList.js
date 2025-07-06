@@ -1,81 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import { Checkbox, IconButton } from '@material-ui/core';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import RefreshIcon from '@material-ui/icons/Refresh';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import SettingsIcon from '@material-ui/icons/Settings';
-import Info from '@material-ui/icons/Info';
-import ForumIcon from '@material-ui/icons/Forum';
-import KeyboardHideIcon from '@material-ui/icons/KeyboardHide';
-import InboxIcon from '@material-ui/icons/Inbox';
-import PeopleIcon from '@material-ui/icons/People';
-import LocalOfferIcon from '@material-ui/icons/LocalOffer';
+import { useSelector } from 'react-redux';
+import { Checkbox, IconButton, Menu, MenuItem } from '@material-ui/core';
+import {
+  ArrowDropDown as ArrowDropDownIcon,
+  Refresh as RefreshIcon,
+  MoreVert as MoreVertIcon,
+  Settings as SettingsIcon,
+  Info as InfoIcon,
+  Forum as ForumIcon,
+  KeyboardHide as KeyboardHideIcon,
+  Inbox as InboxIcon,
+  People as PeopleIcon,
+  LocalOffer as LocalOfferIcon,
+} from '@material-ui/icons';
+
 import './EmailList.css';
 import Section from './Section';
 import EmailRow from './EmailRow';
 import { db } from './firebase';
 import filterEmails from './utils/filterEmails';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import VirtualKeyboard from './VirtualKeyboard';
 import { loadDrafts } from './utils/draftStorage';
+import { fetchGmailMessages } from './utils/gmailApi';
+import VirtualKeyboard from './VirtualKeyboard';
+import { selectUser } from './features/userSlice';
 
-function EmailList({ toggleTheme, folder = 'inbox' }) {
+function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
+  const user = useSelector(selectUser);
   const [emails, setEmails] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
   const [selectedTab, setSelectedTab] = useState('Primary');
   const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
   const [optionsAnchor, setOptionsAnchor] = useState(null);
-  const optionsOpen = Boolean(optionsAnchor);
   const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
-  const handleOptionsOpen = (event) => setOptionsAnchor(event.currentTarget);
-  const handleKeyboardOpen = () => setShowKeyboard((prev) => !prev);
-  const handleKeyboardClose = () => setShowKeyboard(false);
+  const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
+  const handleOptionsOpen = (e) => setOptionsAnchor(e.currentTarget);
   const handleOptionsClose = () => setOptionsAnchor(null);
+  const toggleKeyboard = () => setShowKeyboard((prev) => !prev);
 
   const toggleSelectEmail = (id) => {
     setSelectedEmails((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
   };
 
   const handleSelectAllChange = (e) => {
-    if (e.target.checked) {
-      setSelectedEmails(emails.map((email) => email.id));
-    } else {
-      setSelectedEmails([]);
-    }
+    setSelectedEmails(e.target.checked ? emails.map((e) => e.id) : []);
   };
 
   const markAsRead = async () => {
     await Promise.all(
       selectedEmails.map((id) => db.collection('emails').doc(id).update({ read: true })),
     );
-    await fetchEmails();
     setSelectedEmails([]);
+    await fetchEmails();
   };
 
   const markAsUnread = async () => {
     await Promise.all(
       selectedEmails.map((id) => db.collection('emails').doc(id).update({ read: false })),
     );
-    await fetchEmails();
     setSelectedEmails([]);
+    await fetchEmails();
   };
 
   const deleteSelected = async () => {
     await Promise.all(
       selectedEmails.map(async (id) => {
-        const docRef = db.collection('emails').doc(id);
-        const snapshot = await docRef.get();
-        const currentFolder = snapshot.data().folder;
-        if (currentFolder === 'trash') {
-          await docRef.delete();
-        } else {
-          await docRef.update({ folder: 'trash' });
-        }
+        const doc = db.collection('emails').doc(id);
+        const data = (await doc.get()).data();
+        if (data.folder === 'trash') await doc.delete();
+        else await doc.update({ folder: 'trash' });
       }),
     );
     setSelectedEmails([]);
@@ -84,27 +78,48 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
 
   const fetchEmails = async () => {
     try {
-      const snapshot = await db.collection('emails').orderBy('timestamp', 'desc').get();
-      const items = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      const filtered = filterEmails(items, folder, selectedTab);
-      setEmails(filtered);
-    } catch (e) {
-      if (folder === 'drafts') {
-        const drafts = await loadDrafts();
-        const filtered = filterEmails(drafts, folder, selectedTab);
-        setEmails(filtered);
+      let fetched = [];
+
+      if (folder === 'inbox' && user?.token) {
+        fetched = await fetchGmailMessages(user.token);
+        fetched = fetched.map((msg) => ({
+          id: msg.id,
+          to: msg.from,
+          subject: msg.subject,
+          message: msg.snippet,
+          timestamp: { seconds: Math.floor(Number(msg.internalDate) / 1000) },
+          folder: 'inbox',
+          read: true,
+        }));
+      } else if (folder === 'drafts') {
+        fetched = await loadDrafts();
       } else {
-        setEmails([]);
+        const snapshot = await db.collection('emails').orderBy('timestamp', 'desc').get();
+        fetched = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       }
+
+      const filtered = filterEmails(fetched, folder, selectedTab);
+      const searchLower = searchQuery.toLowerCase();
+
+      const searched = filtered.filter(
+        (email) =>
+          !searchLower ||
+          email.subject?.toLowerCase().includes(searchLower) ||
+          email.message?.toLowerCase().includes(searchLower) ||
+          email.to?.toLowerCase().includes(searchLower) ||
+          email.from?.toLowerCase().includes(searchLower),
+      );
+
+      setEmails(searched);
+    } catch (err) {
+      console.error('Email fetch error:', err);
+      setEmails([]);
     }
   };
 
   useEffect(() => {
     fetchEmails();
-  }, [folder, selectedTab]);
+  }, [folder, selectedTab, searchQuery, user?.token]);
 
   return (
     <div className='emailList'>
@@ -124,7 +139,7 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
           <IconButton onClick={handleOptionsOpen}>
             <MoreVertIcon />
           </IconButton>
-          <Menu anchorEl={optionsAnchor} open={optionsOpen} onClose={handleOptionsClose}>
+          <Menu anchorEl={optionsAnchor} open={Boolean(optionsAnchor)} onClose={handleOptionsClose}>
             <MenuItem
               onClick={() => {
                 markAsRead();
@@ -152,13 +167,13 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
           </Menu>
         </div>
         <div className='emailList__settingsRight'>
-          <IconButton onClick={handleKeyboardOpen}>
+          <IconButton onClick={toggleKeyboard}>
             <KeyboardHideIcon />
           </IconButton>
           <IconButton onClick={handleMenuOpen}>
             <SettingsIcon />
           </IconButton>
-          <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
             <MenuItem
               onClick={() => {
                 toggleTheme();
@@ -195,7 +210,7 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
           onClick={() => setSelectedTab('Social')}
         />
         <Section
-          Icon={Info}
+          Icon={InfoIcon}
           title='Updates'
           color='purple'
           selected={selectedTab === 'Updates'}
@@ -210,11 +225,13 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
         />
       </div>
 
-      {showKeyboard && <VirtualKeyboard onClose={handleKeyboardClose} />}
+      {showKeyboard && <VirtualKeyboard onClose={toggleKeyboard} />}
 
       <div className='emailList__list'>
         {emails.length === 0 ? (
-          <div className='emailList__empty'>No emails to display</div>
+          <div className='emailList__empty'>
+            {searchQuery ? 'No emails found' : 'No emails to display'}
+          </div>
         ) : (
           emails.map(({ id, to, subject, message, timestamp, folder: mailFolder, read }) => (
             <EmailRow
@@ -223,7 +240,7 @@ function EmailList({ toggleTheme, folder = 'inbox' }) {
               title={to}
               subject={subject}
               description={message}
-              time={timestamp ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
+              time={timestamp?.seconds ? new Date(timestamp.seconds * 1000).toUTCString() : ''}
               folder={mailFolder}
               read={read}
               selected={selectedEmails.includes(id)}

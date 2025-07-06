@@ -5,12 +5,13 @@ import { Button } from '@material-ui/core';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeSendMessage, selectDraft, clearDraft } from './features/mailSlice';
-import { db } from './firebase';
-import firebase from 'firebase';
 import { saveDraft, deleteDraft } from './utils/draftStorage';
+import { selectUser } from './features/userSlice';
+import { sendEmail as sendGmailEmail } from './utils/gmailApi';
 
 function SendMail() {
   const draft = useSelector(selectDraft);
+  const user = useSelector(selectUser);
   const { register, handleSubmit, errors, reset } = useForm({
     defaultValues: draft || {},
   });
@@ -22,16 +23,33 @@ function SendMail() {
 
   const onSubmit = async (formData) => {
     console.log(formData);
-    await db.collection('emails').add({
-      to: formData.to,
-      subject: formData.subject,
-      message: formData.message,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      folder: 'sent',
-      category: 'Primary',
-      labels: ['Sent'],
-      read: true,
-    });
+
+    // If we have an OAuth token, also send the email using Gmail API
+    if (user?.token) {
+      try {
+        await sendGmailEmail(user.token, {
+          to: formData.to,
+          subject: formData.subject,
+          message: formData.message,
+        });
+      } catch (e) {
+        console.error('Failed to send via Gmail API', e);
+      }
+    }
+
+    try {
+      await sendGmailMessage({
+        to: formData.to,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      alert('Email sent successfully!');
+    } catch (error) {
+      alert('Failed to send email');
+      console.error(error);
+      return;
+    }
+
     if (draft?.id) {
       await deleteDraft(draft.id);
     }

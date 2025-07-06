@@ -11,12 +11,13 @@ function Login() {
   const signIn = () => {
     auth
       .signInWithPopup(provider)
-      .then(({ user }) => {
+      .then(({ user, credential }) => {
         dispatch(
           login({
             displayName: user.displayName,
             email: user.email,
             photoUrl: user.photoURL,
+            token: credential.accessToken,
           }),
         );
       })
