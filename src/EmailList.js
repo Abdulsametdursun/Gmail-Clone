@@ -86,8 +86,8 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
         spam: ['SPAM'],
         trash: ['TRASH'],
         starred: ['STARRED'],
-        snoozed: ['SNOOZED'],
         important: ['IMPORTANT'],
+        drafts: ['DRAFT'],
         all: [],
       };
 
@@ -95,6 +95,8 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
         fetched = await fetchGmailMessages(user.token, labelMap[folder]);
       } else if (folder === 'drafts') {
         fetched = await loadDrafts();
+      } else if (folder === 'snoozed') {
+        fetched = [];
       } else {
         const snapshot = await db.collection('emails').orderBy('timestamp', 'desc').get();
         fetched = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));

@@ -1,11 +1,31 @@
+export const VALID_LABELS = [
+  'INBOX',
+  'SENT',
+  'DRAFT',
+  'SPAM',
+  'TRASH',
+  'STARRED',
+  'IMPORTANT',
+  'CATEGORY_PERSONAL',
+  'CATEGORY_PROMOTIONS',
+  'CATEGORY_SOCIAL',
+  'CATEGORY_UPDATES',
+  'CATEGORY_FORUMS',
+];
+
 export const fetchGmailMessages = async (accessToken, labelIds = []) => {
   try {
+    let validLabels = labelIds.filter((id) => VALID_LABELS.includes(id));
+    if (validLabels.length === 0) {
+      validLabels = ['INBOX'];
+    }
     const params = new URLSearchParams({ maxResults: '25' });
-    labelIds.forEach((id) => params.append('labelIds', id));
-    if (labelIds.includes('SPAM') || labelIds.includes('TRASH')) {
+    validLabels.forEach((id) => params.append('labelIds', id));
+    if (validLabels.includes('SPAM') || validLabels.includes('TRASH')) {
       params.append('includeSpamTrash', 'true');
     }
 
+    // ✅ Step 1: Get the list of message IDs
     const listRes = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`,
       {
@@ -24,10 +44,11 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
 
     const messageIds = listData.messages || [];
 
+    // ✅ Step 2: Fetch full message details
     const messages = await Promise.all(
       messageIds.map(async ({ id }) => {
         const msgRes = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=To&metadataHeaders=From&metadataHeaders=Subject`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -36,11 +57,32 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
         );
 
         const msg = await msgRes.json();
+        if (!msgRes.ok) {
+          console.error('Gmail message fetch error:', msg);
+          return null;
+        }
+
         const headers = msg.payload?.headers || [];
         const getHeader = (name) =>
           headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
-        const labelIds = msg.labelIds || [];
+        let bodyData =
+          msg.payload?.parts?.find((p) => p.mimeType === 'text/plain')?.body?.data ||
+          msg.payload?.parts?.find((p) => p.mimeType === 'text/html')?.body?.data ||
+          msg.payload?.body?.data ||
+          '';
+        let decodedBody = '';
+        if (bodyData) {
+          try {
+            decodedBody = decodeURIComponent(
+              escape(atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'))),
+            );
+          } catch (e) {
+            decodedBody = atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'));
+          }
+        }
+
+        const msgLabelIds = msg.labelIds || [];
 
         const folderMap = {
           INBOX: 'inbox',
@@ -50,7 +92,6 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
           TRASH: 'trash',
           IMPORTANT: 'important',
           STARRED: 'starred',
-          SNOOZED: 'snoozed',
         };
 
         const categoryMap = {
@@ -61,10 +102,10 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
           CATEGORY_FORUMS: 'Forms',
         };
 
-        const folderKey = Object.keys(folderMap).find((l) => labelIds.includes(l));
+        const folderKey = Object.keys(folderMap).find((l) => msgLabelIds.includes(l));
         const folder = folderKey ? folderMap[folderKey] : 'all';
 
-        const categoryKey = Object.keys(categoryMap).find((l) => labelIds.includes(l));
+        const categoryKey = Object.keys(categoryMap).find((l) => msgLabelIds.includes(l));
         const category = categoryKey ? categoryMap[categoryKey] : '';
 
         return {
@@ -72,17 +113,17 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
           from: getHeader('From'),
           to: getHeader('To'),
           subject: getHeader('Subject'),
-          message: msg.snippet,
+          message: decodedBody || msg.snippet,
           timestamp: { seconds: Math.floor(parseInt(msg.internalDate, 10) / 1000) },
           folder,
           category,
-          labels: labelIds,
-          read: !labelIds.includes('UNREAD'),
+          labels: msgLabelIds,
+          read: !msgLabelIds.includes('UNREAD'),
         };
       }),
     );
 
-    return messages;
+    return messages.filter(Boolean); // remove any nulls
   } catch (error) {
     console.error('Error fetching Gmail messages:', error);
     return [];
