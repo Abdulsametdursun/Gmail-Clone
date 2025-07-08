@@ -13,19 +13,19 @@ export const VALID_LABELS = [
   'CATEGORY_FORUMS',
 ];
 
-export const fetchGmailMessages = async (accessToken, labelIds = []) => {
+export const fetchGmailMessages = async (accessToken, labelId = 'INBOX') => {
   try {
-    let validLabels = labelIds.filter((id) => VALID_LABELS.includes(id));
-    if (validLabels.length === 0) {
-      validLabels = ['INBOX'];
-    }
+    const validLabel = VALID_LABELS.includes(labelId) ? labelId : 'INBOX';
     const params = new URLSearchParams({ maxResults: '25' });
-    validLabels.forEach((id) => params.append('labelIds', id));
-    if (validLabels.includes('SPAM') || validLabels.includes('TRASH')) {
-      params.append('includeSpamTrash', 'true');
+
+    // ❗ Only pass labelId if it's not "all"
+    if (validLabel !== 'all') {
+      params.append('labelIds', validLabel);
+      if (validLabel === 'SPAM' || validLabel === 'TRASH') {
+        params.append('includeSpamTrash', 'true');
+      }
     }
 
-    // ✅ Step 1: Get the list of message IDs
     const listRes = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`,
       {
@@ -44,7 +44,6 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
 
     const messageIds = listData.messages || [];
 
-    // ✅ Step 2: Fetch full message details
     const messages = await Promise.all(
       messageIds.map(async ({ id }) => {
         const msgRes = await fetch(
@@ -71,6 +70,7 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
           msg.payload?.parts?.find((p) => p.mimeType === 'text/html')?.body?.data ||
           msg.payload?.body?.data ||
           '';
+
         let decodedBody = '';
         if (bodyData) {
           try {
@@ -123,7 +123,7 @@ export const fetchGmailMessages = async (accessToken, labelIds = []) => {
       }),
     );
 
-    return messages.filter(Boolean); // remove any nulls
+    return messages.filter(Boolean);
   } catch (error) {
     console.error('Error fetching Gmail messages:', error);
     return [];

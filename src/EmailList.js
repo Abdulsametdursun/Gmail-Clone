@@ -28,7 +28,7 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
   const user = useSelector(selectUser);
   const [emails, setEmails] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const [selectedTab, setSelectedTab] = useState('Primary');
+  const [selectedTab, setSelectedTab] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [optionsAnchor, setOptionsAnchor] = useState(null);
   const [showKeyboard, setShowKeyboard] = useState(false);
@@ -81,14 +81,14 @@ function EmailList({ toggleTheme, folder = 'inbox', searchQuery = '' }) {
       let fetched = [];
 
       const labelMap = {
-        inbox: ['INBOX'],
-        sent: ['SENT'],
-        spam: ['SPAM'],
-        trash: ['TRASH'],
-        starred: ['STARRED'],
-        important: ['IMPORTANT'],
-        drafts: ['DRAFT'],
-        all: [],
+        inbox: 'INBOX',
+        sent: 'SENT',
+        spam: 'SPAM',
+        trash: 'TRASH',
+        starred: 'STARRED',
+        important: 'IMPORTANT',
+        drafts: 'DRAFT',
+        all: '',
       };
 
       if (user?.token && Object.keys(labelMap).includes(folder)) {
